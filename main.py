@@ -106,6 +106,53 @@ def draw_network(
     plt.show()
 
 
+def bfs_shortest_path(graph: nx.Graph, source: int, target: int) -> list[int]:
+    """Computes the shortest path using BFS in an unweighted graph.
+
+    Args:
+        graph: The NetworkX graph.
+        source: The starting node.
+        target: The ending node.
+
+    Returns:
+        A list of nodes representing the shortest path.
+
+    Raises:
+        ValueError: If source or target is not in the graph.
+        RuntimeError: If no path exists between source and target.
+    """
+    if source not in graph:
+        raise ValueError(f"Source node {source} not found in graph.")
+    if target not in graph:
+        raise ValueError(f"Target node {target} not found in graph.")
+
+    from collections import deque
+
+    visited = set()
+    queue = deque([source])
+    visited.add(source)
+    parent = {source: None}
+
+    while queue:
+        current = queue.popleft()
+        if current == target:
+            # Reconstruct path
+            path = []
+            while current is not None:
+                path.append(current)
+                current = parent[current]
+            path.reverse()
+            return path
+
+        for neighbor in graph.neighbors(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+                parent[neighbor] = current
+
+    raise RuntimeError("No path exists between the specified nodes.")
+
+
 def main() -> None:
     try:
         G = load_graph(FILENAME)
@@ -115,13 +162,13 @@ def main() -> None:
 
     try:
         print(f"Szukanie najkrótszej ścieżki między {NODE_START} a {NODE_END}...")
-        path = nx.shortest_path(G, source=NODE_START, target=NODE_END)
+        path = bfs_shortest_path(G, NODE_START, NODE_END)
         print(f"Znaleziono ścieżkę! Długość (liczba krawędzi): {len(path)-1}")
-    except nx.NetworkXNoPath:
-        print("Nie istnieje żadna ścieżka między wybranymi węzłami.")
+    except ValueError as e:
+        print(f"Błąd: {e}")
         return
-    except nx.NodeNotFound:
-        print("Jeden z wybranych węzłów nie istnieje w grafie.")
+    except RuntimeError as e:
+        print(f"{e}")
         return
 
     subgraph = get_path_subgraph(
